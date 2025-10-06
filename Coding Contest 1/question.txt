@@ -1,0 +1,82 @@
+Collaborative Task Board Application
+You are required to build a Task Board Application using the MERN stack where multiple users can collaborate on projects in real-time. The application should include authentication, authorization, board management, tasks with drag-and-drop functionality, and real-time synchronization.
+
+Note: You are allowed to use AI tools to assist with solving this question. However, you must use AI only in chunks/parts, not for the entire solution at once. The evaluation is designed to test your understanding and ability to integrate complex functionalities.
+
+Functional Requirements
+1. Authentication & Authorization
+Implement JWT-based authentication.
+
+There must be two user roles:
+
+Admin: Can create boards and invite other users to the board.
+Member: Can only interact with boards they have been invited to.
+2. Boards & Columns
+Users must be able to create multiple Boards (e.g., "Project A").
+Each board should have multiple Columns (e.g., "Todo", "In Progress", "Done").
+Only the board creator (Admin) should have permission to delete a board.
+3. Tasks
+Each column should support multiple Tasks.
+
+Tasks must include the following fields:
+
+title
+description
+assignedTo (must be a valid board member)
+dueDate
+Tasks must support the following operations:
+
+Creation under a specific column.
+Drag-and-drop movement between columns.
+Updating details of the task.
+Deletion of tasks.
+4. Real-Time Updates
+If one user performs any operation (e.g., creating, moving, updating, or deleting a task), all other users who are currently viewing the same board must see the changes instantly in real-time.
+5. Filtering & Search
+Within a board, users must be able to:
+
+Search tasks by title.
+Filter tasks by assignedTo.
+Filter tasks by dueDate.
+6. Backend Validation & Constraints
+Ensure the following constraints at the backend level:
+
+A user must not be able to view, move, or update tasks in a board they are not a member of.
+Only Admins should be able to invite users to a board.
+Only Admins should be able to delete a board.
+Any drag-and-drop task operation must be validated on the server to ensure the move is authorized.
+7. Activity Logs
+Every significant action must be recorded as an Activity Log, including:
+
+Task created.
+Task moved (with source and destination columns).
+Task updated.
+Task deleted.
+User added to board.
+User removed from board.
+The log entry must include:
+
+Description of the action.
+User who performed it.
+Timestamp.
+8. Pagination
+Implement pagination for tasks inside each column.
+A column should only fetch a limited number of tasks at a time (e.g., 10 per page).
+Provide navigation to move between pages.
+Non-Functional Requirements
+The application must be built using the MERN stack (MongoDB, Express, React, Node.js).
+Use RESTful APIs for backend communication.
+The frontend must be responsive and handle all required interactions smoothly.
+Real-time updates must be implemented across all collaborative features.
+Submission Guidelines
+Push all your code in the Masai GitHub repo under a folder named for this evaluation.
+Submit the folder link only, not the entire repo link.
+Ensure your code is well-structured and runs without errors before submission.
+Important Notes
+Start your application on your own.
+Strictly do not give the entire question to AI.
+You may take help from AI, but only in chunks/parts, not for the whole solution at once.
+Ensure your internet connection is stable throughout the contest.
+No matter what the reason is, if you stop screen sharing or get disconnected, you will be disqualified.
+Please check your internet connection, laptop condition, and electricity backup before attempting the contest.
+Under no circumstances will any disconnection or technical issue be accepted as a valid reason.

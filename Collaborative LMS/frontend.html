@@ -1,0 +1,461 @@
+<!--
+frontend.html
+Single-file React frontend (CDN) for the LMS demo.
+Open directly in browser (file://) or serve at localhost. Ensure backend is running at http://localhost:4000
+-->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Collaborative LMS - Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body { font-family: Arial, sans-serif; margin:0; padding: 20px; background:#f5f7fb; }
+    .container { max-width: 980px; margin: 0 auto; background:white; padding:20px; border-radius:8px; box-shadow:0 4px 18px rgba(0,0,0,.06); }
+    .row { display:flex; gap:12px; }
+    button { padding:8px 12px; border-radius:6px; border:1px solid #ddd; cursor:pointer; }
+    input, textarea, select { width:100%; padding:8px; margin-top:6px; border-radius:6px; border:1px solid #ccc; }
+    pre { background:#111; color:#0f0; padding:12px; border-radius:6px; overflow:auto; }
+    .small { font-size:12px; color:#666; }
+    .flex { display:flex; gap:8px; align-items:center; }
+    .sidebar { width:260px; margin-right:16px; }
+    .content { flex:1; }
+    .card { padding:12px; border-radius:8px; background:#fbfdff; margin-bottom:12px; border:1px solid #eef; }
+    .activity { font-size:13px; color:#333; }
+  </style>
+</head>
+<body>
+  <div class="container" id="root"></div>
+
+  <!-- React + ReactDOM + Socket.IO + Babel (for JSX) -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://cdn.socket.io/4.7.1/socket.io.min.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+  <script type="text/babel">
+  const { useState, useEffect, useRef } = React;
+  const API = "http://localhost:4000/api";
+  const socket = io("http://localhost:4000");
+
+  function useAuth() {
+    const [token, setToken] = useState(localStorage.getItem("token"));
+    const [user, setUser] = useState(JSON.parse(localStorage.getItem("user") || "null"));
+    useEffect(()=> {
+      axios.defaults.headers.common["Authorization"] = token ? "Bearer " + token : "";
+      localStorage.setItem("token", token || "");
+      localStorage.setItem("user", JSON.stringify(user || {}));
+    }, [token, user]);
+    function login(tokenValue, userObj) { setToken(tokenValue); setUser(userObj); }
+    function logout() { setToken(null); setUser(null); localStorage.removeItem("token"); localStorage.removeItem("user"); delete axios.defaults.headers.common["Authorization"]; }
+    return { token, user, login, logout };
+  }
+
+  function App() {
+    const auth = useAuth();
+    const [view, setView] = useState("home"); // home, login, signup, instructorDash, studentDash, course, lesson
+    const [courses, setCourses] = useState([]);
+    const [activeCourse, setActiveCourse] = useState(null);
+    const [activeLesson, setActiveLesson] = useState(null);
+    const [activities, setActivities] = useState([]);
+
+    useEffect(()=> {
+      fetchCourses();
+    }, []);
+
+    useEffect(()=> {
+      // socket global logging
+      socket.on("connect", ()=> console.log("socket connected", socket.id));
+      socket.on("activity", act => {
+        console.log("activity", act);
+        setActivities(prev => [act, ...prev].slice(0,50));
+      });
+      socket.on("lesson_added", data => {
+        if (String(activeCourse?._id) === String(data.courseId)) {
+          // reload course
+          fetchCourse(activeCourse._id);
+        } else {
+          // ignore for now
+        }
+      });
+      socket.on("comment_added", data => {
+        if (String(activeCourse?._id) === String(data.courseId)) {
+          fetchCourse(activeCourse._id);
+        }
+      });
+      return ()=> {
+        socket.off("connect");
+        socket.off("activity");
+        socket.off("lesson_added");
+        socket.off("comment_added");
+      };
+    }, [activeCourse]);
+
+    async function fetchCourses() {
+      try {
+        const res = await axios.get(API + "/courses");
+        setCourses(res.data.courses || []);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function fetchCourse(id) {
+      try {
+        const res = await axios.get(API + "/courses/" + id);
+        setActiveCourse(res.data.course);
+        setView("course");
+        // join socket room
+        socket.emit("join", { courseId: id });
+      } catch (err) {
+        console.error(err);
+        alert("Error loading course: " + err?.response?.data?.error || err.message);
+      }
+    }
+
+    function onCourseSelected(course) {
+      fetchCourse(course._id);
+    }
+
+    return (
+      <div style={{display:"flex", gap:20}}>
+        <div className="sidebar">
+          <div className="card">
+            <h3>Collaborative LMS (Demo)</h3>
+            {auth.user ? (
+              <div>
+                <div className="small">Signed in as <b>{auth.user.username}</b> ({auth.user.role})</div>
+                <div style={{marginTop:8}} className="flex">
+                  <button onClick={()=> { setView(auth.user.role==="instructor" ? "instructorDash" : "studentDash"); }}>Dashboard</button>
+                  <button onClick={()=> auth.logout() }>Logout</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex">
+                <button onClick={()=> setView("login")}>Login</button>
+                <button onClick={()=> setView("signup")}>Signup</button>
+              </div>
+            )}
+          </div>
+
+          <div className="card">
+            <h4>Courses</h4>
+            {courses.map(c => (
+              <div key={c._id} style={{padding:"6px 0"}}>
+                <div style={{display:"flex", justifyContent:"space-between"}}>
+                  <div style={{cursor:"pointer"}} onClick={()=> onCourseSelected(c)}>{c.title}</div>
+                  <div className="small">{new Date(c.createdAt).toLocaleDateString?.()}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{marginTop:8}}>
+              <button onClick={fetchCourses}>Refresh</button>
+            </div>
+          </div>
+
+          <div className="card">
+            <h4>Activity Feed (live)</h4>
+            <div style={{maxHeight:200, overflow:"auto"}}>
+              {activities.map((a,i)=> (
+                <div key={i} className="activity">
+                  <div><b>{a.actor?.username || "system"}</b> — {a.action}</div>
+                  <div className="small">{new Date(a.timestamp).toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="content">
+          <div className="card">
+            {view === "home" && <Home onOpenCourse={id => fetchCourse(id) }/>}
+            {view === "login" && <AuthForm type="login" onDone={(token,user)=> { auth.login(token,user); setView("home"); }} />}
+            {view === "signup" && <AuthForm type="signup" onDone={(token,user)=> { auth.login(token,user); setView("home"); }} />}
+            {view === "instructorDash" && <InstructorDash user={auth.user} />}
+            {view === "studentDash" && <StudentDash user={auth.user} fetchCourses={fetchCourses} />}
+            {view === "course" && activeCourse && <CourseView course={activeCourse} currentUser={auth.user} refreshCourse={()=> fetchCourse(activeCourse._id)} />}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ------------------- Small UI Components ------------------- */
+
+  function Home() {
+    return (
+      <div>
+        <h2>Welcome</h2>
+        <p>This demo shows a simplified Collaborative LMS with real-time comments & activity using Socket.IO.</p>
+        <p className="small">Tip: create an instructor account to add lessons, or sign up as student to enroll.</p>
+      </div>
+    );
+  }
+
+  function AuthForm({ type, onDone }) {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [role, setRole] = useState("student");
+    async function submit(e) {
+      e.preventDefault();
+      try {
+        if (type === "signup") {
+          const res = await axios.post(API + "/auth/signup", { username, password, role });
+          onDone(res.data.token, res.data.user);
+        } else {
+          const res = await axios.post(API + "/auth/login", { username, password });
+          onDone(res.data.token, res.data.user);
+        }
+      } catch (err) {
+        alert("Auth error: " + err?.response?.data?.error || err.message);
+      }
+    }
+    return (
+      <form onSubmit={submit}>
+        <h3>{type === "signup" ? "Sign Up" : "Log In"}</h3>
+        <label>Username</label>
+        <input value={username} onChange={e=>setUsername(e.target.value)} />
+        <label>Password</label>
+        <input type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+        {type === "signup" && (
+          <>
+            <label>Role</label>
+            <select value={role} onChange={e=>setRole(e.target.value)}>
+              <option value="student">Student</option>
+              <option value="instructor">Instructor</option>
+            </select>
+          </>
+        )}
+        <div style={{marginTop:8}}>
+          <button type="submit">{type === "signup" ? "Create account" : "Login"}</button>
+        </div>
+      </form>
+    );
+  }
+
+  function InstructorDash({ user }) {
+    const [title,setTitle] = useState("");
+    const [desc,setDesc] = useState("");
+    async function createCourse() {
+      try {
+        const res = await axios.post(API + "/courses", { title, description: desc });
+        alert("Course created");
+      } catch (err) {
+        alert("Error: " + err?.response?.data?.error || err.message);
+      }
+    }
+    return (
+      <div>
+        <h3>Instructor Dashboard</h3>
+        <div className="card">
+          <h4>Create Course</h4>
+          <label>Title</label>
+          <input value={title} onChange={e=>setTitle(e.target.value)} />
+          <label>Description</label>
+          <textarea value={desc} onChange={e=>setDesc(e.target.value)} />
+          <div style={{marginTop:8}}><button onClick={createCourse}>Create</button></div>
+        </div>
+        <p className="small">After creating a course, open it from the left list and add lessons.</p>
+      </div>
+    );
+  }
+
+  function StudentDash({ user, fetchCourses }) {
+    const [enrolled, setEnrolled] = useState([]);
+    useEffect(()=> { load(); }, []);
+    async function load(){
+      // fetch all courses and show enrolled ones via backend
+      const res = await axios.get(API + "/courses");
+      const courses = res.data.courses || [];
+      // naive: to find enrolled status we need to fetch each course details, but for brevity just show all
+      setEnrolled(courses);
+    }
+    return (
+      <div>
+        <h3>Student Dashboard</h3>
+        <p>Browse courses from the left and enroll.</p>
+        <div className="card">
+          <h4>Available Courses</h4>
+          {enrolled.map(c => <div key={c._id} style={{padding:6}}>{c.title}</div>)}
+        </div>
+      </div>
+    );
+  }
+
+  function CourseView({ course, currentUser, refreshCourse }) {
+    const [title, setTitle] = useState("");
+    const [desc, setDesc] = useState("");
+    const [lessons, setLessons] = useState(course.lessons || []);
+    const [newLesson, setNewLesson] = useState({ title:"", description:"", videoUrl:"" });
+    useEffect(()=> { setLessons(course.lessons || []); }, [course]);
+
+    async function addLesson() {
+      try {
+        const res = await axios.post(API + "/courses/" + course._id + "/lessons", newLesson);
+        alert("lesson added");
+        refreshCourse();
+      } catch (err) {
+        alert("Error: " + err?.response?.data?.error || err.message);
+      }
+    }
+
+    async function enroll() {
+      try {
+        await axios.post(API + "/courses/" + course._id + "/enroll");
+        alert("Enrolled!");
+        refreshCourse();
+      } catch (err) {
+        alert("Error: " + err?.response?.data?.error || err.message);
+      }
+    }
+
+    return (
+      <div>
+        <h2>{course.title}</h2>
+        <div className="small">Instructor: {course.instructor?.username}</div>
+        <p>{course.description}</p>
+
+        {currentUser?.role === "instructor" && String(course.instructor?.id) === String(currentUser?.id) && (
+          <div className="card">
+            <h4>Add Lesson</h4>
+            <label>Title</label>
+            <input value={newLesson.title} onChange={e=>setNewLesson({...newLesson, title:e.target.value})} />
+            <label>Video URL</label>
+            <input value={newLesson.videoUrl} onChange={e=>setNewLesson({...newLesson, videoUrl:e.target.value})} />
+            <label>Description</label>
+            <textarea value={newLesson.description} onChange={e=>setNewLesson({...newLesson, description:e.target.value})} />
+            <div style={{marginTop:8}}>
+              <button onClick={addLesson}>Add Lesson</button>
+            </div>
+          </div>
+        )}
+
+        {currentUser && currentUser.role === "student" && !currentUser.enrolledCourses && (
+          <div>
+            <button onClick={enroll}>Enroll</button>
+          </div>
+        )}
+
+        <div className="card">
+          <h4>Lessons</h4>
+          {lessons && lessons.length === 0 && <div className="small">No lessons or you are not enrolled.</div>}
+          {lessons.map(l => (
+            <div key={l._id} style={{padding:8, borderBottom:"1px dashed #eee"}}>
+              <div style={{display:"flex", justifyContent:"space-between"}}>
+                <div>
+                  <b>{l.title}</b>
+                  <div className="small">{l.description}</div>
+                </div>
+                <div>
+                  <button onClick={()=> openLesson(course._id, l._id)}>Open</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
+    function openLesson(courseId, lessonId) {
+      // fetch course again to ensure we have lesson data then set the global view (for brevity we will replace content)
+      // naive approach: navigate by setting window.location fragment with ids
+      window.location.hash = `lesson:${courseId}:${lessonId}`;
+      // small hack: reload to let our main root pick up hash change
+      setTimeout(()=> window.location.reload(), 50);
+    }
+  }
+
+  /* ------------------- On hash route, show lesson page ------------------- */
+  (function checkHash() {
+    window.addEventListener("load", () => {
+      const h = window.location.hash;
+      if (h && h.startsWith("#lesson:")) {
+        const parts = h.replace("#lesson:","").split(":");
+        if (parts.length === 2) {
+          const [courseId, lessonId] = parts;
+          // render a simple Lesson page in place of main UI
+          const el = document.getElementById("root");
+          ReactDOM.createRoot(el).render(<LessonPage courseId={courseId} lessonId={lessonId} />);
+        }
+      } else {
+        // normal SPA mount
+        const el = document.getElementById("root");
+        ReactDOM.createRoot(el).render(<App />);
+      }
+    });
+  })();
+
+  /* ------------------- Lesson Page Component ------------------- */
+  function LessonPage({ courseId, lessonId }) {
+    const [course, setCourse] = useState(null);
+    const [lesson, setLesson] = useState(null);
+    const [comment, setComment] = useState("");
+    const [comments, setComments] = useState([]);
+    useEffect(()=> {
+      load();
+      socket.emit("join", { courseId });
+      socket.on("comment_added", data => {
+        if (String(data.lessonId) === String(lessonId)) {
+          load(); // basic reload of course to fetch comments
+        }
+      });
+      return ()=> {
+        socket.emit("leave", { courseId });
+        socket.off("comment_added");
+      };
+    }, []);
+
+    async function load() {
+      try {
+        const res = await axios.get(API + "/courses/" + courseId);
+        setCourse(res.data.course);
+        const l = (res.data.course.lessons || []).find(x => String(x._id) === String(lessonId));
+        setLesson(l);
+        setComments(l?.comments || []);
+      } catch (err) {
+        alert("Error loading lesson");
+      }
+    }
+
+    async function postComment() {
+      try {
+        await axios.post(API + "/courses/" + courseId + "/lessons/" + lessonId + "/comments", { message: comment });
+        setComment("");
+        load();
+      } catch (err) {
+        alert("Comment error: " + err?.response?.data?.error || err.message);
+      }
+    }
+
+    return (
+      <div>
+        <a href="#" onClick={(e)=> { e.preventDefault(); window.location.hash=""; window.location.reload(); }}>← Back to app</a>
+        <h2>{lesson?.title}</h2>
+        <div className="small">{lesson?.description}</div>
+        {lesson?.videoUrl && (
+          <div style={{marginTop:12}}>
+            <iframe width="640" height="360" src={lesson.videoUrl} title="video" frameBorder="0"></iframe>
+          </div>
+        )}
+        <div className="card">
+          <h4>Comments</h4>
+          <div>
+            {comments.map(c => (
+              <div key={c._id} style={{padding:8, borderBottom:"1px solid #eee"}}>
+                <div><b>{c.username}</b> <span className="small">{new Date(c.timestamp).toLocaleString()}</span></div>
+                <div>{c.message}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{marginTop:8}}>
+            <textarea rows="3" value={comment} onChange={e=>setComment(e.target.value)} placeholder="Write a comment"></textarea>
+            <div style={{marginTop:8}}><button onClick={postComment}>Post Comment</button></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  </script>
+</body>
+</html>

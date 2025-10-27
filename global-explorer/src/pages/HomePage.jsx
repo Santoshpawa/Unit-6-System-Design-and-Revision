@@ -20,7 +20,7 @@ const HomePage = () => {
     }
   }, [status, dispatch]);
 
-  // Combined Filtering, Searching, and Sorting Logic (Requirement 3 & Bonus)
+  // Combined Filtering, Searching, and Sorting Logic
   const processedCountries = useMemo(() => {
     // FIX: Create a shallow copy of the list before using the mutable .sort() method
     let filtered = [...list]; 
@@ -30,20 +30,23 @@ const HomePage = () => {
       filtered = filtered.filter(c => c.region === filters.region);
     }
 
-    // 2. Search by Name/Capital (Bonus)
+    // 2. Search by Name/Capital (FIXED for undefined properties)
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(c => 
-        c.name.common.toLowerCase().includes(searchLower) ||
-        (c.capital && c.capital[0].toLowerCase().includes(searchLower))
-      );
+      filtered = filtered.filter(c => {
+        // Use optional chaining (?. ) and a fallback (|| '') to prevent TypeError
+        const commonName = c.name?.common?.toLowerCase() || '';
+        const capitalName = c.capital?.[0]?.toLowerCase() || '';
+
+        return commonName.includes(searchLower) || capitalName.includes(searchLower);
+      });
     }
 
     // 3. Sort
     filtered.sort((a, b) => {
-      // Ensure the required fields (population, area) were included in the minimal API fetch.
-      const valA = filters.sortBy === 'population' ? a.population : a.area || 0;
-      const valB = filters.sortBy === 'population' ? b.population : b.area || 0;
+      // Use fallback (|| 0) in case population/area is missing
+      const valA = filters.sortBy === 'population' ? a.population || 0 : a.area || 0;
+      const valB = filters.sortBy === 'population' ? b.population || 0 : b.area || 0;
       return valB - valA; // Descending order
     });
 
@@ -59,7 +62,7 @@ const HomePage = () => {
 
   // Reset pagination if filters/sorting significantly change the list length
   useEffect(() => {
-      setCurrentPage(1);
+    setCurrentPage(1);
   }, [filters]);
 
 

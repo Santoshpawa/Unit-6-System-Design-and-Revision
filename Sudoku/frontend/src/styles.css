@@ -1,0 +1,46 @@
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  padding: 20px;
+}
+.center {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+}
+.card {
+  width: 320px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+.input {
+  width: 100%;
+}
+.grid {
+  display: flex;
+  gap: 20px;
+}
+.left {
+  flex: 2;
+}
+.right {
+  flex: 1;
+  border-left: 1px solid #eee;
+  padding-left: 20px;
+}
+.puzzle-list button {
+  margin: 4px;
+}
+.locked {
+  opacity: 0.4;
+}
+.error {
+  color: red;
+}
+.badge {
+  background: #f0f0f8;
+  padding: 8px;
+  margin: 6px 0;
+  border-radius: 6px;
+}

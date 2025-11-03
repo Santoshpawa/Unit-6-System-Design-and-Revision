@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Meal Data Viewer</title>
+    <style>
+        /* CSS for Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #d9534f;
+            margin-bottom: 30px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            align-items: center;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        select, input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        #mealList {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .meal-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .meal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .meal-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .meal-details {
+            padding: 15px;
+        }
+        .meal-details h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.5em;
+        }
+        .meal-details p {
+            margin: 5px 0;
+            font-size: 0.95em;
+        }
+        .meal-details span {
+            font-weight: 600;
+            color: #777;
+        }
+        .loading-message, .error-message {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 40px;
+        }
+        .error-message {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🍽️ Meal Data Explorer</h1>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="filterInput">Filter by Name/Category:</label>
+                <input type="text" id="filterInput" placeholder="Type to search meals...">
+            </div>
+
+            <div class="control-group">
+                <label for="sortSelector">Sort By:</label>
+                <select id="sortSelector">
+                    <option value="">-- Select Sort --</option>
+                    <option value="name_asc">Name (A-Z)</option>
+                    <option value="name_desc">Name (Z-A)</option>
+                    <option value="area_asc">Area (A-Z)</option>
+                    <option value="area_desc">Area (Z-A)</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="loading" class="loading-message">Loading meal data...</div>
+        <div id="error" class="error-message" style="display: none;"></div>
+        
+        <div id="mealList">
+            </div>
+    </div>
+
+    <script>
+        // JavaScript for Fetching, Sorting, and Filtering
+        
+        const API_URL = 'https://www.themealdb.com/api/json/v1/1/search.php?f=a';
+        let originalMeals = [];
+        let filteredMeals = [];
+
+        const mealList = document.getElementById('mealList');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const filterInput = document.getElementById('filterInput');
+        const sortSelector = document.getElementById('sortSelector');
+
+// ------------------------------------------------------------------
+// 1. Data Fetching
+// ------------------------------------------------------------------
+
+        /**
+         * Fetches meal data from the API and stores it.
+         */
+        async function fetchMeals() {
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            mealList.innerHTML = '';
+
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                // If the 'meals' property is null (e.g., no results), treat it as an empty array
+                originalMeals = data.meals || [];
+                filteredMeals = [...originalMeals]; // Initialize filtered list
+                
+                renderMeals(filteredMeals);
+            } catch (error) {
+                console.error("Fetch error:", error);
+                errorDiv.textContent = 'Failed to fetch data. Please try again later.';
+                errorDiv.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+// ------------------------------------------------------------------
+// 2. DOM Rendering
+// ------------------------------------------------------------------
+
+        /**
+         * Renders the given array of meals into the DOM.
+         * @param {Array} mealsToRender - The array of meal objects.
+         */
+        function renderMeals(mealsToRender) {
+            mealList.innerHTML = '';
+            if (mealsToRender.length === 0) {
+                mealList.innerHTML = '<div class="loading-message">No meals found matching your criteria.</div>';
+                return;
+            }
+
+            mealsToRender.forEach(meal => {
+                const card = document.createElement('div');
+                card.classList.add('meal-card');
+
+                card.innerHTML = `
+                    <img src="${meal.strMealThumb}" alt="${meal.strMeal}">
+                    <div class="meal-details">
+                        <h2>${meal.strMeal}</h2>
+                        <p><span>Category:</span> ${meal.strCategory}</p>
+                        <p><span>Area:</span> ${meal.strArea}</p>
+                    </div>
+                `;
+                mealList.appendChild(card);
+            });
+        }
+
+// ------------------------------------------------------------------
+// 3. Filtering Logic
+// ------------------------------------------------------------------
+
+        /**
+         * Filters the original list based on the search input value.
+         */
+        function handleFilter() {
+            const searchTerm = filterInput.value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                // If search term is empty, reset filtered list
+                filteredMeals = [...originalMeals];
+            } else {
+                // Filter by name or category
+                filteredMeals = originalMeals.filter(meal => 
+                    meal.strMeal.toLowerCase().includes(searchTerm) ||
+                    meal.strCategory.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Apply current sorting criteria to the newly filtered list
+            handleSort();
+        }
+
+        filterInput.addEventListener('input', handleFilter);
+
+// ------------------------------------------------------------------
+// 4. Sorting Logic
+// ------------------------------------------------------------------
+
+        /**
+         * Sorts the currently filtered list based on the selected option.
+         */
+        function handleSort() {
+            const sortValue = sortSelector.value;
+
+            if (!sortValue) {
+                // If no sort option selected, rely on filtering result
+                renderMeals(filteredMeals);
+                return;
+            }
+
+            const [field, direction] = sortValue.split('_'); // e.g., ['name', 'asc']
+
+            filteredMeals.sort((a, b) => {
+                let valA, valB;
+
+                if (field === 'name') {
+                    valA = a.strMeal.toLowerCase();
+                    valB = b.strMeal.toLowerCase();
+                } else if (field === 'area') {
+                    valA = a.strArea.toLowerCase();
+                    valB = b.strArea.toLowerCase();
+                }
+                
+                // Standard string comparison
+                if (valA < valB) {
+                    return direction === 'asc' ? -1 : 1;
+                }
+                if (valA > valB) {
+                    return direction === 'asc' ? 1 : -1;
+                }
+                return 0; // names/areas are equal
+            });
+
+            renderMeals(filteredMeals);
+        }
+
+        sortSelector.addEventListener('change', handleSort);
+
+// ------------------------------------------------------------------
+// Initial Load
+// ------------------------------------------------------------------
+
+        // Start the application by fetching the data
+        fetchMeals();
+
+    </script>
+</body>
+</html>

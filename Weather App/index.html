@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Weather & Map App</title>
+    <style>
+        /* CSS for Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            transition: background-image 1s ease-in-out; /* Bonus: BG Transition */
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #1e88e5;
+            margin-bottom: 25px;
+        }
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+        #cityInput {
+            padding: 12px 15px;
+            width: 70%;
+            max-width: 400px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .weather-panel, #map {
+            flex: 1 1 45%;
+            min-width: 300px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            background-color: #fafafa;
+        }
+        #map {
+            height: 400px;
+            background-color: #e0e0e0;
+        }
+        .current-weather {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .current-weather h2 {
+            margin-top: 0;
+            color: #1e88e5;
+            font-size: 2em;
+        }
+        .temp {
+            font-size: 4em;
+            font-weight: 300;
+            color: #333;
+        }
+        .condition-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .condition-icon img {
+            width: 80px;
+            height: 80px;
+        }
+        .details p {
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px dashed #eee;
+        }
+        .forecast-button-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        #forecastBtn {
+            padding: 10px 20px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        #forecastBtn:hover {
+            background-color: #fb8c00;
+        }
+
+        /* 5-Day Forecast Section */
+        #forecastSection {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        #forecastContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .day-card {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+        }
+        .day-card h4 {
+            margin-top: 0;
+            color: #1e88e5;
+        }
+        .day-card p {
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        /* Utility classes for background (Bonus) */
+        .bg-sunny { background-image: url('https://source.unsplash.com/1600x900/?sun,sky'); background-size: cover; }
+        .bg-rainy { background-image: url('https://source.unsplash.com/1600x900/?rain,storm'); background-size: cover; }
+        .bg-cloudy { background-image: url('https://source.unsplash.com/1600x900/?cloudy,overcast'); background-size: cover; }
+        .bg-clear { background-image: url('https://source.unsplash.com/1600x900/?clear,stars'); background-size: cover; }
+        
+        /* Error/Loading */
+        .message {
+            text-align: center;
+            padding: 20px;
+            font-weight: bold;
+            color: #d32f2f;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Global Weather Explorer</h1>
+
+        <div class="search-container">
+            <input type="text" id="cityInput" placeholder="Enter City Name or Zip Code" required>
+            <button id="searchBtn" onclick="searchCity()">Search</button>
+        </div>
+        
+        <div id="loading" class="message" style="display: none;">Loading weather data...</div>
+        <div id="error" class="message" style="display: none;"></div>
+
+        <div class="main-content">
+            <div class="weather-panel" id="weatherPanel" style="display: none;">
+                <div class="current-weather">
+                    <h2 id="currentCity"></h2>
+                    <div class="condition-icon">
+                        <img id="weatherIcon" alt="Weather Icon">
+                        <p class="temp"><span id="currentTemp"></span></p>
+                    </div>
+                    <p id="condition"></p>
+                </div>
+                
+                <div class="details">
+                    <h3>Details</h3>
+                    <p>Humidity: <span id="humidity"></span></p>
+                    <p>Wind Speed: <span id="windSpeed"></span></p>
+                    <p>Sunrise: <span id="sunrise"></span></p>
+                    <p>Sunset: <span id="sunset"></span></p>
+                </div>
+
+                <div class="forecast-button-container">
+                    <button id="forecastBtn">5-Day Forecast</button>
+                </div>
+            </div>
+
+            <div id="map"></div>
+        </div>
+        
+        <div id="forecastSection" style="display: none;">
+            <h2>5-Day Forecast</h2>
+            <div id="forecastContainer">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        // REPLACE WITH YOUR ACTUAL KEYS
+        const OPENWEATHER_API_KEY = 'YOUR_OPENWEATHER_API_KEY'; 
+        const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
+        
+        const weatherPanel = document.getElementById('weatherPanel');
+        const mapElement = document.getElementById('map');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const cityInput = document.getElementById('cityInput');
+        const forecastBtn = document.getElementById('forecastBtn');
+        const forecastSection = document.getElementById('forecastSection');
+        const forecastContainer = document.getElementById('forecastContainer');
+
+        let currentCoords = { lat: 0, lon: 0 };
+        let currentCityName = '';
+        let map;
+        let marker;
+
+        // --- Utility Functions ---
+
+        /** Converts UTC Unix timestamp to HH:MM:SS local time */
+        function formatTime(timestamp, timezoneOffset) {
+            const date = new Date((timestamp + timezoneOffset) * 1000);
+            const hours = date.getUTCHours().toString().padStart(2, '0');
+            const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+            const seconds = date.getUTCSeconds().toString().padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+        
+        /** Changes the background based on weather condition (Bonus) */
+        function setBackground(weatherMain) {
+            const body = document.body;
+            body.className = ''; 
+            const condition = weatherMain.toLowerCase();
+            
+            if (condition.includes('clear')) {
+                body.classList.add('bg-clear');
+            } else if (condition.includes('cloud') || condition.includes('mist') || condition.includes('fog')) {
+                body.classList.add('bg-cloudy');
+            } else if (condition.includes('rain') || condition.includes('drizzle') || condition.includes('thunder')) {
+                body.classList.add('bg-rainy');
+            } else {
+                body.classList.add('bg-sunny');
+            }
+        }
+
+        // --- Map Functions ---
+
+        /** Initializes Google Map */
+        window.initMap = function() {
+            map = new google.maps.Map(mapElement, {
+                center: { lat: 0, lng: 0 },
+                zoom: 2,
+            });
+            // Marker is created once and updated later
+            marker = new google.maps.Marker({ map: map });
+        }
+
+        /** Updates the map center and marker position */
+        function updateMap(lat, lon, city) {
+            const pos = { lat: lat, lng: lon };
+            
+            map.setCenter(pos);
+            map.setZoom(10);
+            
+            marker.setPosition(pos);
+            marker.setTitle(city);
+        }
+
+        // --- Weather Display Functions ---
+        
+        /** Fetches current weather and updates UI/Map */
+        async function fetchWeather(queryType, queryValue) {
+            loading.style.display = 'block';
+            errorDiv.style.display = 'none';
+            weatherPanel.style.display = 'none';
+            forecastSection.style.display = 'none';
+
+            let apiUrl;
+            if (queryType === 'coords') {
+                apiUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${queryValue.lat}&lon=${queryValue.lon}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+            } else {
+                apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${queryValue}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+            }
+
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                if (data.cod !== 200) {
+                    throw new Error(data.message || 'City not found.');
+                }
+                
+                // Save coordinates for map and forecast
+                currentCoords.lat = data.coord.lat;
+                currentCoords.lon = data.coord.lon;
+                currentCityName = data.name;
+
+                // Update current weather UI
+                document.getElementById('currentCity').textContent = data.name + ', ' + data.sys.country;
+                document.getElementById('currentTemp').textContent = `${Math.round(data.main.temp)}°C`;
+                document.getElementById('condition').textContent = data.weather[0].description.toUpperCase();
+                document.getElementById('humidity').textContent = `${data.main.humidity}%`;
+                document.getElementById('windSpeed').textContent = `${data.wind.speed} m/s`;
+                document.getElementById('weatherIcon').src = `https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`;
+                
+                const sunriseTime = formatTime(data.sys.sunrise, data.timezone);
+                const sunsetTime = formatTime(data.sys.sunset, data.timezone);
+                document.getElementById('sunrise').textContent = sunriseTime;
+                document.getElementById('sunset').textContent = sunsetTime;
+
+                setBackground(data.weather[0].main); // Bonus BG change
+
+                // Update Map
+                updateMap(data.coord.lat, data.coord.lon, data.name);
+                
+                weatherPanel.style.display = 'block';
+            } catch (err) {
+                errorDiv.textContent = `Error: ${err.message}`;
+                errorDiv.style.display = 'block';
+                weatherPanel.style.display = 'none';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        /** Fetches 5-day forecast and displays it */
+        async function fetchForecast() {
+            if (!currentCoords.lat || !currentCoords.lon) return;
+
+            forecastSection.style.display = 'block';
+            forecastContainer.innerHTML = 'Fetching forecast...';
+
+            const apiUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${currentCoords.lat}&lon=${currentCoords.lon}&units=metric&appid=${OPENWEATHER_API_KEY}`;
+
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+                
+                if (data.cod !== '200') {
+                    throw new Error('Could not retrieve forecast.');
+                }
+
+                forecastContainer.innerHTML = '';
+                
+                // Filter to get one entry per day (around noon is best)
+                const fiveDayForecast = data.list.filter(item => item.dt_txt.includes("12:00:00"));
+
+                // Handle the case where the list doesn't exactly have 5 noons (e.g., partial day remaining)
+                // We'll iterate over the first 5 unique dates
+                const uniqueDates = [];
+                const finalForecast = [];
+
+                data.list.forEach(item => {
+                    const dateStr = item.dt_txt.split(' ')[0];
+                    if (!uniqueDates.includes(dateStr) && finalForecast.length < 5) {
+                        uniqueDates.push(dateStr);
+                        // Find min/max for that day (simplistic approach: just use the noon temp for demonstration)
+                        finalForecast.push(item); 
+                    }
+                });
+
+
+                finalForecast.forEach(day => {
+                    const date = new Date(day.dt * 1000);
+                    const dayName = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                    
+                    const card = document.createElement('div');
+                    card.classList.add('day-card');
+                    card.innerHTML = `
+                        <h4>${dayName}</h4>
+                        <img src="https://openweathermap.org/img/wn/${day.weather[0].icon}.png" alt="Weather Icon" style="width: 50px;">
+                        <p>${day.weather[0].description}</p>
+                        <p>Temp: <strong>${Math.round(day.main.temp_min)}°C / ${Math.round(day.main.temp_max)}°C</strong></p>
+                    `;
+                    forecastContainer.appendChild(card);
+                });
+
+            } catch (err) {
+                forecastContainer.innerHTML = `<p class="message">Error retrieving forecast: ${err.message}</p>`;
+            }
+        }
+
+        // --- Event Listeners ---
+        
+        /** Handler for city search */
+        function searchCity() {
+            const city = cityInput.value.trim();
+            if (city) {
+                fetchWeather('city', city);
+            }
+        }
+        
+        // Add listener for Enter key in search box
+        cityInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchCity();
+            }
+        });
+        
+        // Add listener for 5-day forecast button
+        forecastBtn.addEventListener('click', fetchForecast);
+
+        // --- Geolocation Initialization ---
+        
+        /** Gets user's current location on load */
+        function getGeolocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const { latitude, longitude } = position.coords;
+                        fetchWeather('coords', { lat: latitude, lon: longitude });
+                    },
+                    (error) => {
+                        console.warn('Geolocation denied or failed:', error.message);
+                        errorDiv.textContent = 'Geolocation access denied. Please search for a city manually.';
+                        errorDiv.style.display = 'block';
+                        loading.style.display = 'none';
+                        // Initialize map at a default center if location fails
+                        updateMap(20, 0, 'Global View'); 
+                    }
+                );
+            } else {
+                errorDiv.textContent = 'Geolocation is not supported by this browser. Please search manually.';
+                errorDiv.style.display = 'block';
+                loading.style.display = 'none';
+            }
+        }
+
+        // Load the Google Maps script dynamically after setting up initMap function
+        function loadGoogleMapsScript() {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&callback=initMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+
+        // Start the app sequence
+        getGeolocation();
+        loadGoogleMapsScript();
+
+    </script>
+</body>
+</html>

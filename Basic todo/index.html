@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple To-Do List</title>
+    <style>
+        /* CSS for Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 20px;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .input-group {
+            display: flex;
+            margin-bottom: 20px;
+        }
+
+        #taskInput {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px 0 0 4px;
+            font-size: 16px;
+        }
+
+        #addTaskBtn {
+            padding: 10px 15px;
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        #addTaskBtn:hover {
+            background-color: #4cae4c;
+        }
+
+        #todoList {
+            list-style: none;
+            padding: 0;
+        }
+
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            transition: background-color 0.3s;
+        }
+
+        /* BONUS: Styling completed tasks */
+        .completed {
+            background-color: #e0e0e0;
+            opacity: 0.6;
+            text-decoration: line-through;
+            color: #888;
+        }
+        
+        .task-item span {
+            flex-grow: 1;
+            cursor: pointer; /* Allows clicking text to complete */
+        }
+
+        .actions button {
+            margin-left: 10px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .complete-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .footer-actions {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        #clearCompletedBtn {
+            padding: 8px 15px;
+            background-color: #f0ad4e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #clearCompletedBtn:hover {
+            background-color: #ec971f;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Simple To-Do List</h1>
+
+        <div class="input-group">
+            <input type="text" id="taskInput" placeholder="Add a new task...">
+            <button id="addTaskBtn">Add Task</button>
+        </div>
+
+        <ul id="todoList">
+            </ul>
+
+        <div class="footer-actions">
+            <button id="clearCompletedBtn">Clear Completed</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript for Interactivity
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskInput = document.getElementById('taskInput');
+            const addTaskBtn = document.getElementById('addTaskBtn');
+            const todoList = document.getElementById('todoList');
+            const clearCompletedBtn = document.getElementById('clearCompletedBtn');
+
+            // Array to hold the tasks in memory (no storage used)
+            let tasks = [];
+
+            // --- Function to Render the To-Do List ---
+            const renderTasks = () => {
+                todoList.innerHTML = ''; // Clear the current list
+
+                tasks.forEach((task, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('task-item');
+                    if (task.completed) {
+                        listItem.classList.add('completed');
+                    }
+
+                    // Task Text
+                    const taskText = document.createElement('span');
+                    taskText.textContent = task.text;
+                    taskText.addEventListener('click', () => toggleComplete(index)); // BONUS: click text to toggle
+
+                    // Action Buttons container
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.classList.add('actions');
+
+                    // Delete Button
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.classList.add('delete-btn');
+                    deleteBtn.addEventListener('click', () => deleteTask(index));
+
+                    actionsDiv.appendChild(deleteBtn);
+                    listItem.appendChild(taskText);
+                    listItem.appendChild(actionsDiv);
+                    
+                    todoList.appendChild(listItem);
+                });
+            };
+
+            // --- Event Handlers ---
+
+            // 1. Add a new task
+            const addTask = () => {
+                const text = taskInput.value.trim();
+                if (text) {
+                    tasks.push({ text: text, completed: false });
+                    taskInput.value = ''; // Clear input field
+                    renderTasks();
+                }
+            };
+            
+            // Add task on button click or Enter key
+            addTaskBtn.addEventListener('click', addTask);
+            taskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addTask();
+                }
+            });
+
+            // 2. Mark task as completed
+            const toggleComplete = (index) => {
+                tasks[index].completed = !tasks[index].completed;
+                renderTasks();
+            };
+
+            // 3. Delete a task
+            const deleteTask = (index) => {
+                // Use splice to remove 1 element starting at the given index
+                tasks.splice(index, 1);
+                renderTasks();
+            };
+            
+            // 4. BONUS: Clear Completed Tasks
+            clearCompletedBtn.addEventListener('click', () => {
+                // Filter out all tasks where 'completed' is true
+                tasks = tasks.filter(task => !task.completed);
+                renderTasks();
+            });
+
+            // Initial render
+            renderTasks();
+        });
+    </script>
+</body>
+</html>

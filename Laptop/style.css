@@ -1,0 +1,187 @@
+/* App.css */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    padding: 20px;
+}
+
+.app-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+header h1 {
+    text-align: center;
+    color: #007bff;
+    margin-bottom: 30px;
+}
+
+.main-content {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+.panel {
+    flex: 1;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #fafafa;
+    border: 1px solid #ddd;
+}
+
+/* Configuration Panel */
+.config-group {
+    margin-bottom: 15px;
+}
+
+.config-label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.config-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.btn-save {
+    background-color: #28a745;
+    color: white;
+}
+.btn-save:hover { background-color: #218838; }
+
+.btn-reset {
+    background-color: #ffc107;
+    color: #333;
+}
+.btn-reset:hover { background-color: #e0a800; }
+
+/* Preview Panel */
+.preview-panel {
+    border-width: 3px;
+    border-style: solid;
+    transition: border-color 0.5s, box-shadow 0.5s;
+}
+
+.laptop-preview {
+    height: 150px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    transition: background-color 0.5s;
+}
+
+.specs-list p {
+    margin: 5px 0;
+}
+
+.total-price {
+    margin-top: 20px;
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #007bff;
+    text-align: right;
+}
+
+.price-tag {
+    color: #dc3545;
+}
+
+/* Saved Configurations */
+.saved-configs {
+    margin-top: 40px;
+}
+
+.saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.saved-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border: 2px solid;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.saved-details p {
+    margin: 2px 0;
+}
+
+.saved-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-edit {
+    background-color: #007bff;
+    color: white;
+}
+.btn-edit:hover { background-color: #0056b3; }
+
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+}
+.btn-delete:hover { background-color: #c82333; }
+
+.no-configs {
+    text-align: center;
+    color: #6c757d;
+    padding: 20px;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 40px 0;
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+    .saved-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+}

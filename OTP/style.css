@@ -1,0 +1,71 @@
+.otp-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    margin: 50px auto;
+}
+
+h2 {
+    color: #333;
+    margin-bottom: 25px;
+}
+
+.otp-input-group {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.otp-input {
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    text-align: center;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    /* Hide spin buttons for number inputs */
+    -moz-appearance: textfield; 
+}
+
+.otp-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.status {
+    height: 30px;
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+
+.success {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.submit-btn {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s;
+}
+
+.submit-btn:hover:not(:disabled) {
+    background-color: #0056b3;
+}
+
+.submit-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}

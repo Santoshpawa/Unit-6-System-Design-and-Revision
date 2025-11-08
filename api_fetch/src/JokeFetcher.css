@@ -1,0 +1,124 @@
+/* JokeFetcher.css */
+.joke-fetcher-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: sans-serif;
+}
+
+h1, h2 {
+  text-align: center;
+  color: #333;
+}
+
+.control-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 10px 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
+button {
+  padding: 10px 15px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  transition: background-color 0.3s;
+}
+
+button:disabled {
+  background-color: #b3d7ff;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.multiple-fetch {
+  display: flex;
+  gap: 10px;
+}
+
+.multiple-fetch input {
+  width: 40px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* Current Joke Display */
+.current-display {
+  min-height: 80px; /* Prevent layout shift */
+  margin-bottom: 30px;
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-left: 5px solid #007bff;
+  border-radius: 4px;
+}
+
+.current-joke .setup {
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.status-message {
+  font-style: italic;
+  color: #666;
+  text-align: center;
+}
+
+.status-message.loading {
+  color: #007bff;
+}
+
+.status-message.error {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+/* History Section */
+.history-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px dashed #ccc;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.joke-list {
+  list-style: none;
+  padding: 0;
+}
+
+.history-item {
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  border-left: 3px solid #6c757d;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+/* Bonus: Longest Setup Highlight */
+.history-item.longest-setup {
+  background-color: #fff3cd; /* Light yellow background */
+  border-left: 3px solid #ffc107; /* Yellow highlight bar */
+  font-weight: bold;
+}
